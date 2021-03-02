@@ -92,7 +92,8 @@
     "centerHorizontally": "Horizontal zentrieren",
     "distributeHorizontally": "Horizontal verteilen",
     "distributeVertically": "Vertikal verteilen",
-    "viewMode": "Ansichtsmodus"
+    "viewMode": "Ansichtsmodus",
+    "toggleExportColorScheme": "Farbschema für Export umschalten"
   },
   "buttons": {
     "clearReset": "Zeichenfläche löschen & Hintergrundfarbe zurücksetzen",
@@ -117,6 +118,7 @@
     "edit": "Bearbeiten",
     "undo": "Rückgängig machen",
     "redo": "Wiederholen",
+    "resetLibrary": "Bibliothek zurücksetzen",
     "createNewRoom": "Neuen Raum erstellen",
     "fullScreen": "Vollbildanzeige",
     "darkMode": "Dunkles Design",
@@ -139,7 +141,8 @@
     "errorLoadingLibrary": "Beim Laden der Drittanbieter-Bibliothek ist ein Fehler aufgetreten.",
     "confirmAddLibrary": "Dieses fügt {{numShapes}} Form(en) zu deiner Bibliothek hinzu. Bist du sicher?",
     "imageDoesNotContainScene": "Das Importieren von Bildern wird derzeit nicht unterstützt.\n\nMöchtest du eine Szene importieren? Dieses Bild scheint keine Zeichnungsdaten zu enthalten. Hast du dies beim Exportieren aktiviert?",
-    "cannotRestoreFromImage": "Die Zeichnung konnte aus dieser Bilddatei nicht wiederhergestellt werden"
+    "cannotRestoreFromImage": "Die Zeichnung konnte aus dieser Bilddatei nicht wiederhergestellt werden",
+    "resetLibrary": "Dieses löscht deine Bibliothek. Bist du sicher?"
   },
   "toolBar": {
     "selection": "Auswahl",

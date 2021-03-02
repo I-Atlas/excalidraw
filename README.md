@@ -70,6 +70,10 @@ The second set of digits is the encryption key. The Excalidraw server doesn’t 
 
 Find a growing list of libraries containing assets for your drawings at [libraries.excalidraw.com](https://libraries.excalidraw.com).
 
+## Embedding Excalidraw in your App?
+
+Try out [`@excalidraw/excalidraw`](https://www.npmjs.com/package/@excalidraw/excalidraw). This package allows you to easily embed Excalidraw as a React component into your apps.
+
 ## Development
 
 ### Code Sandbox
@@ -82,6 +86,12 @@ Find a growing list of libraries containing assets for your drawings at [librari
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
+#### Requirements
+
+- [Node.js](https://nodejs.org/en/)
+- [Yarn](https://yarnpkg.com/getting-started/install)
+- [Git](https://git-scm.com/downloads)
+
 #### Clone the repo
 
 ```bash
@@ -90,14 +100,14 @@ git clone https://github.com/excalidraw/excalidraw.git
 
 #### Commands
 
-| Command               | Description                       |
-| --------------------- | --------------------------------- |
-| `npm install`         | Install the dependencies          |
-| `npm start`           | Run the project                   |
-| `npm run fix`         | Reformat all files with Prettier  |
-| `npm test`            | Run tests                         |
-| `npm run test:update` | Update test snapshots             |
-| `npm run test:code`   | Test for formatting with Prettier |
+| Command            | Description                       |
+| ------------------ | --------------------------------- |
+| `yarn`             | Install the dependencies          |
+| `yarn start`       | Run the project                   |
+| `yarn fix`         | Reformat all files with Prettier  |
+| `yarn test`        | Run tests                         |
+| `yarn test:update` | Update test snapshots             |
+| `yarn test:code`   | Test for formatting with Prettier |
 
 #### Docker Compose
 
