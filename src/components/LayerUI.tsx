@@ -516,6 +516,7 @@ const LayerUI = ({
                       {heading}
                       <Stack.Row gap={1}>
                         <ShapesSwitcher
+                          canvas={canvas}
                           elementType={appState.elementType}
                           setAppState={setAppState}
                           isLibraryOpen={appState.isLibraryOpen}
@@ -703,6 +704,7 @@ const areEqual = (prev: LayerUIProps, next: LayerUIProps) => {
 
   const keys = Object.keys(prevAppState) as (keyof Partial<AppState>)[];
   return (
+    prev.renderCustomFooter === next.renderCustomFooter &&
     prev.langCode === next.langCode &&
     prev.elements === next.elements &&
     keys.every((key) => prevAppState[key] === nextAppState[key])

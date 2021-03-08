@@ -12,6 +12,56 @@ The change should be grouped under one of the below section and must contain PR 
 Please add the latest change on the top under the correct section.
 -->
 
+## Unreleased
+
+## Excalidraw API
+
+### Fixes
+
+- Position text editor absolute and fix the offsets so it doesn't remain fixed when the container is scrolled [#3200](https://github.com/excalidraw/excalidraw/pull/3200).
+- Scope CSS variables so that host CSS vars don't clash with excalidraw [#3199](https://github.com/excalidraw/excalidraw/pull/3199).
+
+---
+
+## 0.4.2
+
+## Excalidraw API
+
+### Fixes
+
+- Wrap excalidraw in position relative so host need not do it anymore & hide scrollbars in zen mode [#3174](https://github.com/excalidraw/excalidraw/pull/3174).
+- Reduce the scroll debounce timeout to `100ms` so `offsets` gets updated faster if changed when container scrolled [#3182](https://github.com/excalidraw/excalidraw/pull/3182).
+- Rerender UI on `renderFooter` prop change [#3183](https://github.com/excalidraw/excalidraw/pull/3183)
+
+## Excalidraw Library
+
+### Fixes
+
+- Temporarily downgrade browser-fs-access to fix legacy FS API [#3172](https://github.com/excalidraw/excalidraw/pull/3172)
+
+---
+
+## 0.4.1
+
+## Excalidraw API
+
+### Fixes
+
+- Use `Array.from` when spreading over set so that typescript transpiles correctly in the umd build[#3165](https://github.com/excalidraw/excalidraw/pull/3165).
+
+## Excalidraw Library
+
+### Features
+
+- Add export info on copy PNG to clipboard toast message [#3159](https://github.com/excalidraw/excalidraw/pull/3159).
+- Use the latest version of Virgil [#3124](https://github.com/excalidraw/excalidraw/pull/3124).
+- Support exporting with dark mode [#3046](https://github.com/excalidraw/excalidraw/pull/3046).
+
+### Fixes
+
+- Cursor being leaked outside of canvas [#3161](https://github.com/excalidraw/excalidraw/pull/3161).
+- Hide scrollbars in zenMode [#3144](https://github.com/excalidraw/excalidraw/pull/3144).
+
 ## 0.4.0
 
 ## Excalidraw API
