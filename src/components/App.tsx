@@ -1028,6 +1028,13 @@ class App extends React.Component<ExcalidrawProps, AppState> {
   });
 
   private onCopy = withBatchedUpdates((event: ClipboardEvent) => {
+    const activeSelection = document.getSelection();
+    if (
+      activeSelection?.anchorNode &&
+      !this.excalidrawContainerRef.current!.contains(activeSelection.anchorNode)
+    ) {
+      return;
+    }
     if (isWritableElement(event.target)) {
       return;
     }
@@ -3563,7 +3570,6 @@ class App extends React.Component<ExcalidrawProps, AppState> {
           // This will only work as of Chrome 86,
           // but can be safely ignored on older releases.
           const item = event.dataTransfer.items[0];
-          // TODO: Make this part of `AppState`.
           (file as any).handle = await (item as any).getAsFileSystemHandle();
         } catch (error) {
           console.warn(error.name, error.message);
