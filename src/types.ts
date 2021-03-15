@@ -90,7 +90,7 @@ export type AppState = {
   showHelpDialog: boolean;
   toastMessage: string | null;
   zenModeEnabled: boolean;
-  appearance: "light" | "dark";
+  theme: "light" | "dark";
   gridSize: number | null;
   viewModeEnabled: boolean;
 
@@ -189,6 +189,8 @@ export interface ExcalidrawProps {
   viewModeEnabled?: boolean;
   zenModeEnabled?: boolean;
   gridModeEnabled?: boolean;
+  libraryReturnUrl?: string;
+  theme?: "dark" | "light";
 }
 
 export type SceneData = {
