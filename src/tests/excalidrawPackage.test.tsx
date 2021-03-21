@@ -3,6 +3,7 @@ import { fireEvent, GlobalTestState, render } from "./test-utils";
 import Excalidraw from "../packages/excalidraw/index";
 import { queryByText, queryByTestId } from "@testing-library/react";
 import { GRID_SIZE } from "../constants";
+import { t } from "../i18n";
 
 const { h } = window;
 
@@ -102,6 +103,31 @@ describe("<Excalidraw/>", () => {
       expect(h.state.theme).toBe("dark");
 
       expect(queryByTestId(container, "toggle-dark-mode")).toBe(null);
+    });
+  });
+
+  describe("Test name prop", () => {
+    it('should allow editing name when the name prop is "undefined"', async () => {
+      const { container } = await render(<Excalidraw />);
+
+      fireEvent.click(queryByTestId(container, "export-button")!);
+      const textInput: HTMLInputElement | null = document.querySelector(
+        ".ExportDialog__name .TextInput",
+      );
+      expect(textInput?.value).toContain(`${t("labels.untitled")}`);
+      expect(textInput?.nodeName).toBe("INPUT");
+    });
+
+    it('should set the name and not allow editing when the name prop is present"', async () => {
+      const name = "test";
+      const { container } = await render(<Excalidraw name={name} />);
+
+      await fireEvent.click(queryByTestId(container, "export-button")!);
+      const textInput = document.querySelector(
+        ".ExportDialog__name .TextInput--readonly",
+      );
+      expect(textInput?.textContent).toEqual(name);
+      expect(textInput?.nodeName).toBe("SPAN");
     });
   });
 });
