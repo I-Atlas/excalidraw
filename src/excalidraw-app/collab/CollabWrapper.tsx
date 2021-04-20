@@ -38,7 +38,7 @@ import Portal from "./Portal";
 import RoomDialog from "./RoomDialog";
 import { createInverseContext } from "../../createInverseContext";
 import { t } from "../../i18n";
-import { UserIdleState } from "./types";
+import { UserIdleState } from "../../types";
 import { IDLE_THRESHOLD, ACTIVE_THRESHOLD } from "../../constants";
 import { trackEvent } from "../../analytics";
 
@@ -113,8 +113,8 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
       process.env.NODE_ENV === ENV.TEST ||
       process.env.NODE_ENV === ENV.DEVELOPMENT
     ) {
-      window.h = window.h || ({} as Window["h"]);
-      Object.defineProperties(window.h, {
+      window.collab = window.collab || ({} as Window["collab"]);
+      Object.defineProperties(window, {
         collab: {
           configurable: true,
           value: this,
@@ -591,8 +591,6 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
 
   handleClose = () => {
     this.setState({ modalIsShown: false });
-    const collabIcon = document.querySelector(".CollabButton") as HTMLElement;
-    collabIcon.focus();
   };
 
   onUsernameChange = (username: string) => {
@@ -640,6 +638,7 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
             setErrorMessage={(errorMessage) => {
               this.setState({ errorMessage });
             }}
+            theme={this.excalidrawAPI.getAppState().theme}
           />
         )}
         {errorMessage && (
@@ -656,6 +655,19 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
       </>
     );
   }
+}
+
+declare global {
+  interface Window {
+    collab: InstanceType<typeof CollabWrapper>;
+  }
+}
+
+if (
+  process.env.NODE_ENV === ENV.TEST ||
+  process.env.NODE_ENV === ENV.DEVELOPMENT
+) {
+  window.collab = window.collab || ({} as Window["collab"]);
 }
 
 export default CollabWrapper;

@@ -3,7 +3,6 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -20,7 +19,7 @@ import {
   VERSION_TIMEOUT,
 } from "../constants";
 import { loadFromBlob } from "../data/blob";
-import { DataState, ImportedDataState } from "../data/types";
+import { ImportedDataState } from "../data/types";
 import {
   ExcalidrawElement,
   NonDeletedExcalidrawElement,
@@ -50,6 +49,8 @@ import {
   importFromLocalStorage,
   saveToLocalStorage,
 } from "./data/localStorage";
+import CustomStats from "./CustomStats";
+import { RestoredDataState } from "../data/restore";
 
 const languageDetector = new LanguageDetector();
 languageDetector.init({
@@ -81,13 +82,11 @@ const initializeScene = async (opts: {
   );
   const externalUrlMatch = window.location.hash.match(/^#url=(.*)$/);
 
-  const initialData = importFromLocalStorage();
+  const localDataState = importFromLocalStorage();
 
-  let scene: DataState & { scrollToContent?: boolean } = await loadScene(
-    null,
-    null,
-    initialData,
-  );
+  let scene: RestoredDataState & {
+    scrollToContent?: boolean;
+  } = await loadScene(null, null, localDataState);
 
   let roomLinkData = getCollaborationLinkData(window.location.href);
   const isExternalScene = !!(id || jsonBackendMatch || roomLinkData);
@@ -102,12 +101,12 @@ const initializeScene = async (opts: {
     ) {
       // Backwards compatibility with legacy url format
       if (id) {
-        scene = await loadScene(id, null, initialData);
+        scene = await loadScene(id, null, localDataState);
       } else if (jsonBackendMatch) {
         scene = await loadScene(
           jsonBackendMatch[1],
           jsonBackendMatch[2],
-          initialData,
+          localDataState,
         );
       }
       scene.scrollToContent = true;
@@ -161,30 +160,10 @@ const initializeScene = async (opts: {
   return null;
 };
 
-function ExcalidrawWrapper() {
-  // dimensions
-  // ---------------------------------------------------------------------------
-
-  const [dimensions, setDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+const ExcalidrawWrapper = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const currentLangCode = languageDetector.detect() || defaultLang.code;
   const [langCode, setLangCode] = useState(currentLangCode);
-
-  useLayoutEffect(() => {
-    const onResize = () => {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener("resize", onResize);
-
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -323,13 +302,19 @@ function ExcalidrawWrapper() {
     [langCode],
   );
 
+  const renderCustomStats = () => {
+    return (
+      <CustomStats
+        setToastMessage={(message) => excalidrawAPI!.setToastMessage(message)}
+      />
+    );
+  };
+
   return (
     <>
       <Excalidraw
         ref={excalidrawRefCallback}
         onChange={onChange}
-        width={dimensions.width}
-        height={dimensions.height}
         initialData={initialStatePromiseRef.current.promise}
         onCollabButtonClick={collabAPI?.onCollabButtonClick}
         isCollaborating={collabAPI?.isCollaborating()}
@@ -337,6 +322,9 @@ function ExcalidrawWrapper() {
         onExportToBackend={onExportToBackend}
         renderFooter={renderFooter}
         langCode={langCode}
+        renderCustomStats={renderCustomStats}
+        detectScroll={false}
+        handleKeyboardGlobally={true}
       />
       {excalidrawAPI && <CollabWrapper excalidrawAPI={excalidrawAPI} />}
       {errorMessage && (
@@ -347,9 +335,9 @@ function ExcalidrawWrapper() {
       )}
     </>
   );
-}
+};
 
-export default function ExcalidrawApp() {
+const ExcalidrawApp = () => {
   return (
     <TopErrorBoundary>
       <CollabContextConsumer>
@@ -357,4 +345,6 @@ export default function ExcalidrawApp() {
       </CollabContextConsumer>
     </TopErrorBoundary>
   );
-}
+};
+
+export default ExcalidrawApp;
