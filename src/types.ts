@@ -58,7 +58,6 @@ export type AppState = {
   exportBackground: boolean;
   exportEmbedScene: boolean;
   exportWithDarkMode: boolean;
-  shouldAddWatermark: boolean;
   currentItemStrokeColor: string;
   currentItemBackgroundColor: string;
   currentItemFillStyle: ExcalidrawElement["fillStyle"];
@@ -82,7 +81,13 @@ export type AppState = {
   isResizing: boolean;
   isRotating: boolean;
   zoom: Zoom;
-  openMenu: "canvas" | "shape" | null;
+  openMenu:
+    | "canvas"
+    | "shape"
+    | "canvasColorPicker"
+    | "backgroundColorPicker"
+    | "strokeColorPicker"
+    | null;
   lastPointerDownWith: PointerType;
   selectedElementIds: { [id: string]: boolean };
   previousSelectedElementIds: { [id: string]: boolean };
@@ -182,8 +187,8 @@ export interface ExcalidrawProps {
     data: ClipboardData,
     event: ClipboardEvent | null,
   ) => Promise<boolean> | boolean;
-  renderTopRight?: (isMobile: boolean, appState: AppState) => JSX.Element;
-  renderFooter?: (isMobile: boolean) => JSX.Element;
+  renderTopRightUI?: (isMobile: boolean, appState: AppState) => JSX.Element;
+  renderFooter?: (isMobile: boolean, appState: AppState) => JSX.Element;
   langCode?: Language["code"];
   viewModeEnabled?: boolean;
   zenModeEnabled?: boolean;
@@ -220,7 +225,7 @@ type CanvasActions = {
   export?: boolean;
   loadScene?: boolean;
   saveAsScene?: boolean;
-  saveScene?: boolean;
+  saveToActiveFile?: boolean;
   theme?: boolean;
 };
 

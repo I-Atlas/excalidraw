@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { RoughCanvas } from "roughjs/bin/canvas";
 import rough from "roughjs/bin/rough";
 import clsx from "clsx";
-import { supported } from "browser-fs-access";
+import { supported as fsSupported } from "browser-fs-access";
 import { nanoid } from "nanoid";
 
 import {
@@ -259,6 +259,7 @@ export type PointerDownState = Readonly<{
     hasBeenDuplicated: boolean;
     hasHitCommonBoundingBoxOfSelectedElements: boolean;
   };
+  withCmdOrCtrl: boolean;
   drag: {
     // Might change during the pointer interation
     hasOccurred: boolean;
@@ -452,7 +453,7 @@ class App extends React.Component<AppProps, AppState> {
     const {
       onCollabButtonClick,
       onExportToBackend,
-      renderTopRight,
+      renderTopRightUI,
       renderFooter,
       renderCustomStats,
     } = this.props;
@@ -493,7 +494,7 @@ class App extends React.Component<AppProps, AppState> {
               langCode={getLanguage().code}
               isCollaborating={this.props.isCollaborating || false}
               onExportToBackend={onExportToBackend}
-              renderTopRight={renderTopRight}
+              renderTopRightUI={renderTopRightUI}
               renderCustomFooter={renderFooter}
               viewModeEnabled={viewModeEnabled}
               showExitZenModeBtn={
@@ -1458,26 +1459,30 @@ class App extends React.Component<AppProps, AppState> {
     }
   };
 
-  public updateScene = withBatchedUpdates((sceneData: SceneData) => {
-    if (sceneData.commitToHistory) {
-      this.history.resumeRecording();
-    }
+  public updateScene = withBatchedUpdates(
+    <K extends keyof AppState>(sceneData: {
+      elements?: SceneData["elements"];
+      appState?: Pick<AppState, K> | null;
+      collaborators?: SceneData["collaborators"];
+      commitToHistory?: SceneData["commitToHistory"];
+    }) => {
+      if (sceneData.commitToHistory) {
+        this.history.resumeRecording();
+      }
 
-    // currently we only support syncing background color
-    if (sceneData.appState?.viewBackgroundColor) {
-      this.setState({
-        viewBackgroundColor: sceneData.appState.viewBackgroundColor,
-      });
-    }
+      if (sceneData.appState) {
+        this.setState(sceneData.appState);
+      }
 
-    if (sceneData.elements) {
-      this.scene.replaceAllElements(sceneData.elements);
-    }
+      if (sceneData.elements) {
+        this.scene.replaceAllElements(sceneData.elements);
+      }
 
-    if (sceneData.collaborators) {
-      this.setState({ collaborators: sceneData.collaborators });
-    }
-  });
+      if (sceneData.collaborators) {
+        this.setState({ collaborators: sceneData.collaborators });
+      }
+    },
+  );
 
   private onSceneUpdated = () => {
     this.setState({});
@@ -1639,6 +1644,21 @@ class App extends React.Component<AppProps, AppState> {
       if (event.key === KEYS.SPACE && gesture.pointers.size === 0) {
         isHoldingSpace = true;
         setCursor(this.canvas, CURSOR_TYPE.GRABBING);
+      }
+
+      if (event.key === KEYS.G || event.key === KEYS.S) {
+        const selectedElements = getSelectedElements(
+          this.scene.getElements(),
+          this.state,
+        );
+        if (selectedElements.length) {
+          if (event.key === KEYS.G) {
+            this.setState({ openMenu: "backgroundColorPicker" });
+          }
+          if (event.key === KEYS.S) {
+            this.setState({ openMenu: "strokeColorPicker" });
+          }
+        }
       }
     },
   );
@@ -2256,11 +2276,13 @@ class App extends React.Component<AppProps, AppState> {
     } else if (isOverScrollBar) {
       setCursor(this.canvas, CURSOR_TYPE.AUTO);
     } else if (
-      hitElement ||
-      this.isHittingCommonBoundingBoxOfSelectedElements(
-        scenePointer,
-        selectedElements,
-      )
+      // if using cmd/ctrl, we're not dragging
+      !event[KEYS.CTRL_OR_CMD] &&
+      (hitElement ||
+        this.isHittingCommonBoundingBoxOfSelectedElements(
+          scenePointer,
+          selectedElements,
+        ))
     ) {
       setCursor(this.canvas, CURSOR_TYPE.MOVE);
     } else {
@@ -2538,6 +2560,7 @@ class App extends React.Component<AppProps, AppState> {
 
     return {
       origin,
+      withCmdOrCtrl: event[KEYS.CTRL_OR_CMD],
       originInGrid: tupleToCoors(
         getGridPoint(origin.x, origin.y, this.state.gridSize),
       ),
@@ -2742,6 +2765,9 @@ class App extends React.Component<AppProps, AppState> {
         if (hitElement != null) {
           // on CMD/CTRL, drill down to hit element regardless of groups etc.
           if (event[KEYS.CTRL_OR_CMD]) {
+            if (!this.state.selectedElementIds[hitElement.id]) {
+              pointerDownState.hit.wasAddedToSelection = true;
+            }
             this.setState((prevState) => ({
               ...editGroupForSelectedElement(prevState, hitElement),
               previousSelectedElementIds: this.state.selectedElementIds,
@@ -3180,7 +3206,9 @@ class App extends React.Component<AppProps, AppState> {
           this.scene.getElements(),
           this.state,
         );
-        if (selectedElements.length > 0) {
+        // prevent dragging even if we're no longer holding cmd/ctrl otherwise
+        // it would have weird results (stuff jumping all over the screen)
+        if (selectedElements.length > 0 && !pointerDownState.withCmdOrCtrl) {
           const [dragX, dragY] = getGridPoint(
             pointerCoords.x - pointerDownState.drag.offset.x,
             pointerCoords.y - pointerDownState.drag.offset.y,
@@ -3322,11 +3350,25 @@ class App extends React.Component<AppProps, AppState> {
       if (this.state.elementType === "selection") {
         const elements = this.scene.getElements();
         if (!event.shiftKey && isSomeElementSelected(elements, this.state)) {
-          this.setState({
-            selectedElementIds: {},
-            selectedGroupIds: {},
-            editingGroupId: null,
-          });
+          if (pointerDownState.withCmdOrCtrl && pointerDownState.hit.element) {
+            this.setState((prevState) =>
+              selectGroupsForSelectedElements(
+                {
+                  ...prevState,
+                  selectedElementIds: {
+                    [pointerDownState.hit.element!.id]: true,
+                  },
+                },
+                this.scene.getElements(),
+              ),
+            );
+          } else {
+            this.setState({
+              selectedElementIds: {},
+              selectedGroupIds: {},
+              editingGroupId: null,
+            });
+          }
         }
         const elementsWithinSelection = getElementsWithinSelection(
           elements,
@@ -3342,6 +3384,14 @@ class App extends React.Component<AppProps, AppState> {
                   map[element.id] = true;
                   return map;
                 }, {} as any),
+                ...(pointerDownState.hit.element
+                  ? {
+                      // if using ctrl/cmd, select the hitElement only if we
+                      // haven't box-selected anything else
+                      [pointerDownState.hit.element
+                        .id]: !elementsWithinSelection.length,
+                    }
+                  : null),
               },
             },
             this.scene.getElements(),
@@ -3606,12 +3656,18 @@ class App extends React.Component<AppProps, AppState> {
             } else {
               // remove element from selection while
               // keeping prev elements selected
-              this.setState((prevState) => ({
-                selectedElementIds: {
-                  ...prevState.selectedElementIds,
-                  [hitElement!.id]: false,
-                },
-              }));
+              this.setState((prevState) =>
+                selectGroupsForSelectedElements(
+                  {
+                    ...prevState,
+                    selectedElementIds: {
+                      ...prevState.selectedElementIds,
+                      [hitElement!.id]: false,
+                    },
+                  },
+                  this.scene.getElements(),
+                ),
+              );
             }
           } else {
             // add element to selection while
@@ -3844,7 +3900,7 @@ class App extends React.Component<AppProps, AppState> {
       // default: assume an Excalidraw file regardless of extension/MimeType
     } else {
       this.setState({ isLoading: true });
-      if (supported) {
+      if (fsSupported) {
         try {
           // This will only work as of Chrome 86,
           // but can be safely ignored on older releases.
