@@ -36,7 +36,7 @@ import { Island } from "./Island";
 import "./LayerUI.scss";
 import { LibraryUnit } from "./LibraryUnit";
 import { LoadingMessage } from "./LoadingMessage";
-import { LockIcon } from "./LockIcon";
+import { LockButton } from "./LockButton";
 import { MobileMenu } from "./MobileMenu";
 import { PasteChartDialog } from "./PasteChartDialog";
 import { Section } from "./Section";
@@ -47,6 +47,7 @@ import { Tooltip } from "./Tooltip";
 import { UserList } from "./UserList";
 import Library from "../data/library";
 import { JSONExportDialog } from "./JSONExportDialog";
+import { LibraryButton } from "./LibraryButton";
 
 interface LayerUIProps {
   actionManager: ActionManager;
@@ -63,11 +64,6 @@ interface LayerUIProps {
   toggleZenMode: () => void;
   langCode: Language["code"];
   isCollaborating: boolean;
-  onExportToBackend?: (
-    exportedElements: readonly NonDeletedExcalidrawElement[],
-    appState: AppState,
-    canvas: HTMLCanvasElement | null,
-  ) => void;
   renderTopRightUI?: (isMobile: boolean, appState: AppState) => JSX.Element;
   renderCustomFooter?: (isMobile: boolean, appState: AppState) => JSX.Element;
   viewModeEnabled: boolean;
@@ -112,6 +108,7 @@ const LibraryMenuItems = ({
   onAddToLibrary,
   onInsertShape,
   pendingElements,
+  theme,
   setAppState,
   setLibraryItems,
   libraryReturnUrl,
@@ -124,6 +121,7 @@ const LibraryMenuItems = ({
   onRemoveFromLibrary: (index: number) => void;
   onInsertShape: (elements: LibraryItem) => void;
   onAddToLibrary: (elements: LibraryItem) => void;
+  theme: AppState["theme"];
   setAppState: React.Component<any, AppState>["setState"];
   setLibraryItems: (library: LibraryItems) => void;
   libraryReturnUrl: ExcalidrawProps["libraryReturnUrl"];
@@ -197,7 +195,7 @@ const LibraryMenuItems = ({
       <a
         href={`https://libraries.excalidraw.com?target=${
           window.name || "_blank"
-        }&referrer=${referrer}&useHash=true&token=${id}`}
+        }&referrer=${referrer}&useHash=true&token=${id}&theme=${theme}`}
         target="_excalidraw_libraries"
       >
         {t("labels.libraries")}
@@ -251,6 +249,7 @@ const LibraryMenu = ({
   onInsertShape,
   pendingElements,
   onAddToLibrary,
+  theme,
   setAppState,
   libraryReturnUrl,
   focusContainer,
@@ -261,6 +260,7 @@ const LibraryMenu = ({
   onClickOutside: (event: MouseEvent) => void;
   onInsertShape: (elements: LibraryItem) => void;
   onAddToLibrary: () => void;
+  theme: AppState["theme"];
   setAppState: React.Component<any, AppState>["setState"];
   libraryReturnUrl: ExcalidrawProps["libraryReturnUrl"];
   focusContainer: () => void;
@@ -350,6 +350,7 @@ const LibraryMenu = ({
           libraryReturnUrl={libraryReturnUrl}
           focusContainer={focusContainer}
           library={library}
+          theme={theme}
           id={id}
         />
       )}
@@ -371,7 +372,6 @@ const LayerUI = ({
   showThemeBtn,
   toggleZenMode,
   isCollaborating,
-  onExportToBackend,
   renderTopRightUI,
   renderCustomFooter,
   viewModeEnabled,
@@ -393,32 +393,24 @@ const LayerUI = ({
         elements={elements}
         appState={appState}
         actionManager={actionManager}
-        onExportToBackend={
-          onExportToBackend
-            ? (elements) => {
-                onExportToBackend &&
-                  onExportToBackend(elements, appState, canvas);
-              }
-            : undefined
-        }
+        exportOpts={UIOptions.canvasActions.export}
+        canvas={canvas}
       />
     );
   };
 
   const renderImageExportDialog = () => {
-    if (!UIOptions.canvasActions.export) {
+    if (!UIOptions.canvasActions.saveAsImage) {
       return null;
     }
 
     const createExporter = (type: ExportType): ExportCB => async (
       exportedElements,
-      scale,
     ) => {
       await exportCanvas(type, exportedElements, appState, {
         exportBackground: appState.exportBackground,
         name: appState.name,
         viewBackgroundColor: appState.viewBackgroundColor,
-        scale,
       })
         .catch(muteFSAbortError)
         .catch((error) => {
@@ -496,6 +488,9 @@ const LayerUI = ({
             setAppState={setAppState}
             showThemeBtn={showThemeBtn}
           />
+          {appState.fileHandle && (
+            <>{actionManager.renderAction("saveToActiveFile")}</>
+          )}
         </Stack.Col>
       </Island>
     </Section>
@@ -514,7 +509,8 @@ const LayerUI = ({
         style={{
           // we want to make sure this doesn't overflow so substracting 200
           // which is approximately height of zoom footer and top left menu items with some buffer
-          maxHeight: `${appState.height - 200}px`,
+          // if active file name is displayed, subtracting 248 to account for its height
+          maxHeight: `${appState.height - (appState.fileHandle ? 248 : 200)}px`,
         }}
       >
         <SelectedShapeActions
@@ -551,6 +547,7 @@ const LayerUI = ({
       libraryReturnUrl={libraryReturnUrl}
       focusContainer={focusContainer}
       library={library}
+      theme={appState.theme}
       id={id}
     />
   ) : null;
@@ -578,6 +575,12 @@ const LayerUI = ({
               {(heading) => (
                 <Stack.Col gap={4} align="start">
                   <Stack.Row gap={1}>
+                    <LockButton
+                      zenModeEnabled={zenModeEnabled}
+                      checked={appState.elementLocked}
+                      onChange={onLockToggle}
+                      title={t("toolBar.lock")}
+                    />
                     <Island
                       padding={1}
                       className={clsx({ "zen-mode": zenModeEnabled })}
@@ -589,15 +592,12 @@ const LayerUI = ({
                           canvas={canvas}
                           elementType={appState.elementType}
                           setAppState={setAppState}
-                          isLibraryOpen={appState.isLibraryOpen}
                         />
                       </Stack.Row>
                     </Island>
-                    <LockIcon
-                      zenModeEnabled={zenModeEnabled}
-                      checked={appState.elementLocked}
-                      onChange={onLockToggle}
-                      title={t("toolBar.lock")}
+                    <LibraryButton
+                      appState={appState}
+                      setAppState={setAppState}
                     />
                   </Stack.Row>
                   {libraryMenu}

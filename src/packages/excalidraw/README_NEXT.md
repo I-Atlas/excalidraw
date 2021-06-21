@@ -159,7 +159,7 @@ To view the full example visit :point_down:
 
 </details>
 
-Since Excalidraw doesn't support server side rendering yet so you will have to make sure the component is rendered once host is mounted.
+Since Excalidraw doesn't support server side rendering yet, you should render the component once the host is mounted.
 
 ```js
 import { useState, useEffect } from "react";
@@ -167,7 +167,7 @@ export default function IndexPage() {
   const [Comp, setComp] = useState(null);
   useEffect(() => {
     import("@excalidraw/excalidraw-next").then((comp) => setComp(comp.default));
-  });
+  }, []);
   return <>{Comp && <Comp />}</>;
 }
 ```
@@ -363,7 +363,6 @@ To view the full example visit :point_down:
 | [`onCollabButtonClick`](#onCollabButtonClick) | Function |  | Callback to be triggered when the collab button is clicked |
 | [`isCollaborating`](#isCollaborating) | `boolean` |  | This implies if the app is in collaboration mode |
 | [`onPointerUpdate`](#onPointerUpdate) | Function |  | Callback triggered when mouse pointer is updated. |
-| [`onExportToBackend`](#onExportToBackend) | Function |  | Callback triggered when link button is clicked on export dialog |
 | [`langCode`](#langCode) | string | `en` | Language code string |
 | [`renderTopRightUI`](#renderTopRightUI) | Function |  | Function that renders custom UI in top right corner |
 | [`renderFooter `](#renderFooter) | Function |  | Function that renders custom UI footer |
@@ -379,6 +378,7 @@ To view the full example visit :point_down:
 | [`detectScroll`](#detectScroll) | boolean | true | Indicates whether to update the offsets when nearest ancestor is scrolled. |
 | [`handleKeyboardGlobally`](#handleKeyboardGlobally) | boolean | false | Indicates whether to bind the keyboard events to document. |
 | [`onLibraryChange`](#onLibraryChange) | <pre>(items: <a href="https://github.com/excalidraw/excalidraw/blob/master/src/types.ts#L200">LibraryItems</a>) => void &#124; Promise&lt;any&gt; </pre> |  | The callback if supplied is triggered when the library is updated and receives the library items. |
+| [`autoFocus`](#autoFocus) | boolean | false | Implies whether to focus the Excalidraw component on page load |
 
 ### Dimensions of Excalidraw
 
@@ -488,10 +488,6 @@ This callback is triggered when mouse pointer is updated.
 
 3.`pointersMap`: [`pointers map`](https://github.com/excalidraw/excalidraw/blob/master/src/types.ts#L131) of the scene
 
-#### `onExportToBackend`
-
-This callback is triggered when the shareable-link button is clicked in the export dialog. The link button will only be shown if this callback is passed.
-
 ```js
 (exportedElements, appState, canvas) => void
 ```
@@ -571,11 +567,21 @@ This prop can be used to customise UI of Excalidraw. Currently we support custom
 | --- | --- | --- | --- |
 | `changeViewBackgroundColor` | boolean | true | Implies whether to show `Background color picker` |
 | `clearCanvas` | boolean | true | Implies whether to show `Clear canvas button` |
-| `export` | boolean | true | Implies whether to show `Export button` |
+| `export` | false &#124; [exportOpts](#exportOpts) | <pre>{ saveFileToDisk: true }</pre> | This prop allows to customize the UI inside the export dialog. By default it shows the "saveFileToDisk". If this prop is `false` the export button will not be rendered. For more details visit [`exportOpts`](#exportOpts). |
 | `loadScene` | boolean | true | Implies whether to show `Load button` |
-| `saveAsScene` | boolean | true | Implies whether to show `Save as button` |
 | `saveToActiveFile` | boolean | true | Implies whether to show `Save button` to save to current file |
 | `theme` | boolean | true | Implies whether to show `Theme toggle` |
+| `saveAsImage` | boolean | true | Implies whether to show `Save as image button` |
+
+#### `exportOpts`
+
+The below attributes can be set in `UIOptions.canvasActions.export` to customize the export dialog. If `UIOptions.canvasActions.export` is `false` the export button will not be rendered.
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `saveFileToDisk` | boolean | true | Implies if save file to disk button should be shown |
+| `exportToBackend` | <pre> (exportedElements: readonly NonDeletedExcalidrawElement[],appState: AppState,canvas: HTMLCanvasElement &#124; null) => void </pre> |  | This callback is triggered when the shareable-link button is clicked in the export dialog. The link button will only be shown if this callback is passed. |
+| `renderCustomUI` | <pre> (exportedElements: readonly NonDeletedExcalidrawElement[],appState: AppState,canvas: HTMLCanvasElement &#124; null) => void </pre> |  | This callback should be supplied if you want to render custom UI in the export dialog. |
 
 #### `onPaste`
 
@@ -638,6 +644,10 @@ It is invoked with empty items when user clears the library. You can use this ca
 ### id
 
 The unique id of the excalidraw component. This can be used to identify the excalidraw component, for example importing the library items to the excalidraw component from where it was initiated when you have multiple excalidraw components rendered on the same page as shown in [multiple excalidraw demo](https://codesandbox.io/s/multiple-excalidraw-k1xx5).
+
+### autoFocus
+
+This prop implies whether to focus the Excalidraw component on page load. Defaults to false.
 
 ### Extra API's
 
@@ -830,3 +840,21 @@ This function returns a svg with the exported elements.
 | exportBackground | boolean | true | Indicates whether background should be exported |
 | viewBackgroundColor | string | #fff | The default background color |
 | exportWithDarkMode | boolean | false | Indicates whether to export with dark mode |
+
+### FONT_FAMILY
+
+**_Signature_**
+
+```js
+import { FONT_FAMILY } from "./constants";
+```
+
+`FONT_FAMILY` contains all the font families used in `Excalidraw` as explained below
+
+| Font Family | Description          |
+| ----------- | -------------------- |
+| Virgil      | The handwritten font |
+| Helvetica   | The Normal Font      |
+| Cacadia     | The Code Font        |
+
+Defaults to `FONT_FAMILY.Virgil` unless passed in `initialData.appState.currentItemFontFamily`.
